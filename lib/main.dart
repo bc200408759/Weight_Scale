@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'user_preferences.dart'; // Import your UserPreferences class
 import 'screens/home.dart'; // Import HomeTab
 import 'screens/bmi.dart';   // Import BmiTab
 import 'screens/history.dart'; // Import HistoryTab
 import 'screens/user_form.dart'; // Import UserForm
 import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
 
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await UserPreferences().init(); // Initialize SharedPreferences
   runApp(WeightScaleApp());
 }
 
@@ -43,9 +47,6 @@ class WeightScaleApp extends StatelessWidget {
     return prefs.containsKey('name');
   }
 }
-
-
-
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -66,12 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = index; // Update selected index
     });
   }
- String? _name;
+
+  // User data variables
+  String? _name;
   double? _currentWeight;
   double? _height;
   int? _age;
   String? _gender;
   double? _targetWeight;
+  double? _startWeight;
 
   @override
   void initState() {
@@ -80,14 +84,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
+    final userPrefs = UserPreferences();
     setState(() {
-      _name = prefs.getString('name');
-      _currentWeight = prefs.getDouble('currentWeight');
-      _height = prefs.getDouble('height');
-      _age = prefs.getInt('age');
-      _gender = prefs.getString('gender');
-      _targetWeight = prefs.getDouble('targetWeight');
+      _name = userPrefs.name;
+      _currentWeight = userPrefs.currentWeight;
+      _height = userPrefs.height;
+      _age = userPrefs.age;
+      _gender = userPrefs.gender;
+      _targetWeight = userPrefs.targetWeight;
+      _startWeight = userPrefs.startWeight;
     });
   }
 
@@ -95,211 +100,258 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Weight Scale'),
+        backgroundColor: Color(0xFF5DD75B),
+        title: Text(
+          'Weight Scale',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            color: Colors.white,
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Welcome, ${_name ?? "User"}'),
-            Text('Current Weight: ${_currentWeight ?? 0} Kg'),
-            Text('Height: ${_height ?? 0} cm'),
-            Text('Age: ${_age ?? 0} years'),
-            Text('Gender: ${_gender ?? "Not specified"}'),
-            Text('Target Weight: ${_targetWeight ?? 0} Kg'),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              'assets/home.svg',
+              color: _selectedIndex == 0 ? Color(0xFF5DD75B) : Color(0xFF959595),
+            ),
+            label: ' ',
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              'assets/bmi.svg',
+              color: _selectedIndex == 1 ? Color(0xFF5DD75B) : Color(0xFF959595),
+            ),
+            label: ' ',
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset(
+              'assets/history.svg',
+              color: _selectedIndex == 2 ? Color(0xFF5DD75B) : Color(0xFF959595),
+            ),
+            label: ' ',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            Container(
+              height: 370,
+              child: DrawerHeader(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF48BA46),
+                      Color.fromARGB(255, 87, 225, 85),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    transform: GradientRotation(137 * 3.1415926535897932 / 180),
+                  ),
+                ),
+                margin: EdgeInsets.zero,
+                padding: EdgeInsets.zero,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Gender',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${_gender ?? "Not specified"}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Age',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${_age ?? "Not specified"}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 15),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Weight',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${_currentWeight ?? "Not specified"}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Height',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${_height ?? "Not specified"}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: SvgPicture.asset('assets/home.svg'),
+              title: Text(
+                'Home',
+                style: TextStyle(
+                  color: Color(0xFF524F4F),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(0);
+              },
+            ),
+            ListTile(
+              leading: SvgPicture.asset('assets/star.svg'),
+              title: Text(
+                'Bmi',
+                style: TextStyle(
+                  color: Color(0xFF524F4F),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(1);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.history),
+              title: Text(
+                'History',
+                style: TextStyle(
+                  color: Color(0xFF524F4F),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _onItemTapped(2);
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.share),
+              title: Text('Share App'),
+              onTap: () {
+                // Implement share functionality
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.rate_review),
+              title: Text('Rate App'),
+              onTap: () {
+                // Implement rate functionality
+              },
+            ),
           ],
         ),
       ),
     );
   }
-
-
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     appBar: AppBar(
-  //       title: Text('Weight Scale'),
-  //       leading: Builder(
-  //         builder: (context) => IconButton(
-  //           icon: Icon(Icons.menu), // Menu icon to open the drawer
-  //           onPressed: () {
-  //             print("object");
-  //             Scaffold.of(context).openDrawer(); // Open the drawer
-  //           },
-  //         ),
-  //       ),
-  //     ),
-      
-
-  //     body: _screens[_selectedIndex], // Display selected screen
-  //     bottomNavigationBar: BottomNavigationBar(
-  //       items: const <BottomNavigationBarItem>[
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.home),
-  //           label: 'Home',
-  //         ),
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.health_and_safety),
-  //           label: 'BMI',
-  //         ),
-  //         BottomNavigationBarItem(
-  //           icon: Icon(Icons.history),
-  //           label: 'History',
-  //         ),
-  //       ],
-  //       currentIndex: _selectedIndex, // Highlight selected tab
-  //       onTap: _onItemTapped, // Handle tab change
-  //     ),
-  //     drawer: Drawer(
-  //       child: ListView(
-  //         padding: EdgeInsets.zero,
-  //         children: <Widget>[
-  //           Container(
-  //             height: 400, // Fixed height of 400 pixels
-  //             child: DrawerHeader(
-  //               decoration: BoxDecoration(
-  //                 color: Colors.green,
-  //               ),
-  //               margin: EdgeInsets.zero,
-  //               padding: EdgeInsets.zero,
-  //               child: Padding(
-  //                 padding: EdgeInsets.symmetric(horizontal: 40),
-  //                 child: Column(
-  //                   crossAxisAlignment: CrossAxisAlignment.start,
-  //                   children: [
-  //                     // First Row: Avatar
-  //                     Center(
-  //                       child: CircleAvatar(
-  //                         radius: 60,
-  //                         backgroundColor: Colors.white,
-  //                         child: Icon(
-  //                           Icons.person,
-  //                           size: 60,
-  //                           color: Colors.blue,
-  //                         ),
-  //                       ),
-  //                     ),
-  //                     SizedBox(height: 15),
-
-  //                     // Second Row: Gender and Age
-  //                     Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.center,
-  //                           children: [
-  //                             Text(
-  //                               'Gender',
-  //                               style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-  //                             ),
-  //                             SizedBox(height: 5),
-  //                             Text(
-  //                               "Male", // Placeholder for gender
-  //                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.center,
-  //                           children: [
-  //                             Text(
-  //                               'Age',
-  //                               style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-  //                             ),
-  //                             SizedBox(height: 5),
-  //                             Text(
-  //                               "22", // Placeholder for age
-  //                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     SizedBox(height: 15),
-
-  //                     // Third Row: Weight and Height
-  //                     Row(
-  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                       children: [
-  //                         Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.center,
-  //                           children: [
-  //                             Text(
-  //                               'Weight',
-  //                               style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-  //                             ),
-  //                             SizedBox(height: 5),
-  //                             Text(
-  //                               "90.5 Kg", // Placeholder for weight
-  //                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                         Column(
-  //                           crossAxisAlignment: CrossAxisAlignment.center,
-  //                           children: [
-  //                             Text(
-  //                               'Height',
-  //                               style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-  //                             ),
-  //                             SizedBox(height: 5),
-  //                             Text(
-  //                               "5ft 11In", // Placeholder for height
-  //                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-  //                             ),
-  //                           ],
-  //                         ),
-  //                       ],
-  //                     ),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //           ListTile(
-  //             leading: Icon(Icons.home),
-  //             title: Text('Home'),
-  //             onTap: () {
-  //               Navigator.pop(context); // Close the drawer
-  //               _onItemTapped(0); // Navigate to Home
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: Icon(Icons.health_and_safety),
-  //             title: Text('BMI'),
-  //             onTap: () {
-  //               Navigator.pop(context); // Close the drawer
-  //               _onItemTapped(1); // Navigate to BMI
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: Icon(Icons.history),
-  //             title: Text('History'),
-  //             onTap: () {
-  //               Navigator.pop(context); // Close the drawer
-  //               _onItemTapped(2); // Navigate to History
-  //             },
-  //           ),
-  //           Divider(),
-  //           ListTile(
-  //             leading: Icon(Icons.share),
-  //             title: Text('Share App'),
-  //             onTap: () {
-  //               // Implement share functionality
-  //             },
-  //           ),
-  //           ListTile(
-  //             leading: Icon(Icons.rate_review),
-  //             title: Text('Rate App'),
-  //             onTap: () {
-  //               // Implement rate functionality
-  //             },
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 

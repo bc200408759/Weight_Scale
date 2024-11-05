@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../user_preferences.dart'; // Import your UserPreferences class
 
-class HomeTab extends StatelessWidget {
-  final double startWeight = 90.0;
-  final double currentWeight = 85.0;
-  final double targetWeight = 75.0;
-  final double weightChange = 5.0;
+class HomeTab extends StatefulWidget {
+  @override
+  _HomeTabState createState() => _HomeTabState();
+}
 
-  double get remainingWeight => currentWeight - targetWeight;
-
-  // List of dates corresponding to each x-axis value
+class _HomeTabState extends State<HomeTab> {
   final List<String> dates = [
     "1/10/2024",
     "2/10/2024",
@@ -17,6 +16,32 @@ class HomeTab extends StatelessWidget {
     "4/10/2024",
     "5/10/2024",
   ];
+
+  double startWeight = 0.0;
+  double currentWeight = 0.0;
+  double targetWeight = 0.0;
+  double weightChange = 0.0;
+  double remainingWeight = 0.0;
+
+  final UserPreferences _userPreferences = UserPreferences();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUserData();
+  }
+
+  Future<void> _initializeUserData() async {
+    await _userPreferences.init();
+
+    setState(() {
+      startWeight = _userPreferences.startWeight ?? 0.0;
+      currentWeight = _userPreferences.currentWeight ?? 0.0;
+      targetWeight = _userPreferences.targetWeight ?? 0.0;
+      weightChange = startWeight - currentWeight;
+      remainingWeight = currentWeight - targetWeight; 
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +53,9 @@ class HomeTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildLabelWithIcon(Icons.flag, "Start", "$startWeight Kg"),
-              _buildLabelWithIcon(Icons.monitor_weight, "Current", "$currentWeight Kg"),
-              _buildLabelWithIcon(Icons.emoji_events, "Target", "$targetWeight Kg"),
+              _buildLabelWithIcon('assets/start_flag.svg', 'Start', '$startWeight Kg'),
+              _buildLabelWithIcon('assets/scale-weigh.svg', 'Current', '$currentWeight Kg'),
+              _buildLabelWithIcon('assets/trophy.svg', 'Goal', '$targetWeight Kg'),
             ],
           ),
           SizedBox(height: 20),
@@ -40,12 +65,13 @@ class HomeTab extends StatelessWidget {
             height: 450,
             child: LineChart(
               LineChartData(
-                minY: 65, // Set the minimum y-axis value to 65
-                maxY: 100, // Set the maximum y-axis value to 100
-                gridData: FlGridData(show: true , 
-                drawHorizontalLine: true, // Draw horizontal lines
-                  drawVerticalLine: false, // Do not draw vertical lines
-                  ),
+                minY: 65,
+                maxY: 100,
+                gridData: FlGridData(
+                  show: true,
+                  drawHorizontalLine: true,
+                  drawVerticalLine: false,
+                ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
@@ -60,24 +86,24 @@ class HomeTab extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: 1, // Show labels at each data point
+                      interval: 1,
                       getTitlesWidget: (value, _) {
                         int index = value.toInt() - 1;
                         return Container(
                           margin: EdgeInsets.only(top: 10),
                           child: Text(
-                          index >= 0 && index < dates.length ? dates[index] : '',
-                          style: TextStyle(fontSize: 10, color: Colors.black),
-                        )
+                            index >= 0 && index < dates.length ? dates[index] : '',
+                            style: TextStyle(fontSize: 10, color: Colors.black),
+                          ),
                         );
                       },
                     ),
                   ),
                   topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false), // Hide top titles
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                   rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false), // Hide right titles
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                 ),
                 borderData: FlBorderData(show: false),
@@ -92,6 +118,7 @@ class HomeTab extends StatelessWidget {
                     ],
                     isCurved: true,
                     barWidth: 2,
+                    color: Color(0xFF5DD75B),
                   ),
                 ],
               ),
@@ -104,7 +131,7 @@ class HomeTab extends StatelessWidget {
             children: [
               _buildWeightColumn("Change", "$weightChange Kg"),
               IconButton(
-                icon: Icon(Icons.add_circle, color: Colors.green, size: 100),
+                icon: Icon(Icons.add_circle, color: Color(0xFF5DD75B), size: 100),
                 onPressed: () {
                   // Add functionality here
                 },
@@ -117,10 +144,14 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLabelWithIcon(IconData icon, String label, String value) {
+  Widget _buildLabelWithIcon(String svgPath, String label, String value) {
     return Column(
       children: [
-        Icon(icon, color: Colors.blue, size: 30),
+        SvgPicture.asset(
+          svgPath,
+          height: 30,
+          width: 30,
+        ),
         SizedBox(height: 8),
         Text(label, style: TextStyle(fontSize: 16, color: Colors.black)),
         SizedBox(height: 4),

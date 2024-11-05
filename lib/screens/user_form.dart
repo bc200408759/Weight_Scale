@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../user_preferences.dart'; // Import your UserProfile class file
 
 class UserForm extends StatefulWidget {
   @override
@@ -13,15 +14,29 @@ class _UserFormState extends State<UserForm> {
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _targetWeightController = TextEditingController();
+  final TextEditingController _startWeightController = TextEditingController();
+
+  // Initialize UserPreferences instance
+  final UserPreferences _userPreferences = UserPreferences();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePreferences();
+  }
+
+  Future<void> _initializePreferences() async {
+    await _userPreferences.init();
+  }
 
   Future<void> _saveUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('name', _nameController.text);
-    await prefs.setDouble('currentWeight', double.parse(_weightController.text));
-    await prefs.setDouble('height', double.parse(_heightController.text));
-    await prefs.setInt('age', int.parse(_ageController.text));
-    await prefs.setString('gender', _genderController.text);
-    await prefs.setDouble('targetWeight', double.parse(_targetWeightController.text));
+    await _userPreferences.setName(_nameController.text);
+    await _userPreferences.setCurrentWeight(double.parse(_weightController.text));
+    await _userPreferences.setHeight(double.parse(_heightController.text));
+    await _userPreferences.setAge(int.parse(_ageController.text));
+    await _userPreferences.setGender(_genderController.text);
+    await _userPreferences.setTargetWeight(double.parse(_targetWeightController.text));
+    await _userPreferences.setStartWeight(double.parse(_startWeightController.text));
 
     Navigator.of(context).pushReplacementNamed('/home'); // Navigate to Home
   }
@@ -34,12 +49,39 @@ class _UserFormState extends State<UserForm> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: 'Name')),
-            TextField(controller: _weightController, decoration: InputDecoration(labelText: 'Current Weight (Kg)'), keyboardType: TextInputType.number),
-            TextField(controller: _heightController, decoration: InputDecoration(labelText: 'Height (cm)'), keyboardType: TextInputType.number),
-            TextField(controller: _ageController, decoration: InputDecoration(labelText: 'Age'), keyboardType: TextInputType.number),
-            TextField(controller: _genderController, decoration: InputDecoration(labelText: 'Gender')),
-            TextField(controller: _targetWeightController, decoration: InputDecoration(labelText: 'Target Weight (Kg)'), keyboardType: TextInputType.number),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: _weightController,
+              decoration: InputDecoration(labelText: 'Current Weight (Kg)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _heightController,
+              decoration: InputDecoration(labelText: 'Height (cm)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _ageController,
+              decoration: InputDecoration(labelText: 'Age'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _genderController,
+              decoration: InputDecoration(labelText: 'Gender'),
+            ),
+            TextField(
+              controller: _targetWeightController,
+              decoration: InputDecoration(labelText: 'Target Weight (Kg)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _startWeightController,
+              decoration: InputDecoration(labelText: 'Start Weight (Kg)'),
+              keyboardType: TextInputType.number,
+            ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _saveUserData,
