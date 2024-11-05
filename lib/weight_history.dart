@@ -45,6 +45,14 @@ class WeightHistory {
     history.add(newEntry);
     await _prefs?.setString(_historyKey, json.encode(history));
   }
+  
+ // Method to print all weight history entries
+  void printWeightHistory() {
+    final history = getHistory();
+    for (var entry in history) {
+      print('Date: ${entry['date']}, Weight: ${entry['weight']} Kg, Change: ${entry['change']} Kg');
+    }
+  }
 
   // Clear the history (for debugging/testing purposes)
   Future<void> clearHistory() async {

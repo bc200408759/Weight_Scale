@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../user_preferences.dart'; // Import your UserPreferences class
+import '../weight_history.dart'; // Import your WeightHistory class
 
 class HomeTab extends StatefulWidget {
   @override
@@ -9,13 +10,8 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  final List<String> dates = [
-    "1/10/2024",
-    "2/10/2024",
-    "3/10/2024",
-    "4/10/2024",
-    "5/10/2024",
-  ];
+  final List<String> dates = [];
+  List<FlSpot> weightSpots = []; // Store FlSpot data for the chart
 
   double startWeight = 0.0;
   double currentWeight = 0.0;
@@ -24,11 +20,13 @@ class _HomeTabState extends State<HomeTab> {
   double remainingWeight = 0.0;
 
   final UserPreferences _userPreferences = UserPreferences();
+  final WeightHistory _weightHistory = WeightHistory();
 
   @override
   void initState() {
     super.initState();
     _initializeUserData();
+    _initializeWeightHistory();
   }
 
   Future<void> _initializeUserData() async {
@@ -41,6 +39,81 @@ class _HomeTabState extends State<HomeTab> {
       weightChange = startWeight - currentWeight;
       remainingWeight = currentWeight - targetWeight; 
     });
+  }
+
+  Future<void> _initializeWeightHistory() async {
+    await _weightHistory.init();
+    _loadWeightHistory();
+  }
+
+  void _loadWeightHistory() {
+    final history = _weightHistory.getHistory();
+    
+    // Populate the FlSpot data and dates
+    weightSpots = [];
+    dates.clear(); // Clear previous dates
+
+    for (var i = 0; i < history.length; i++) {
+      final entry = history[i];
+      weightSpots.add(FlSpot(i.toDouble() + 1, entry['weight'])); // FlSpot(x, y)
+      dates.add(DateTime.parse(entry['date']).toLocal().toString().split(' ')[0]); // Get date in YYYY-MM-DD format
+    }
+
+    setState(() {}); // Trigger a rebuild to update the chart
+  }
+
+  Future<void> _addWeightEntry() async {
+    final double? weight = await _showWeightInputDialog();
+    if (weight != null) {
+      await _weightHistory.addWeightEntry(weight);
+
+      // Update UserPreferences with the new current weight
+      await _userPreferences.setCurrentWeight(weight); // Update current weight in UserPreferences
+
+      // Update UI state
+      setState(() {
+        currentWeight = weight; // Update the currentWeight state variable
+        weightChange = startWeight - currentWeight; // Recalculate weightChange
+        remainingWeight = currentWeight - targetWeight; // Recalculate remainingWeight
+      });
+
+      _loadWeightHistory();  // Refresh weight history data
+      _weightHistory.printWeightHistory();  // Print weight history to the console
+    }
+  }
+
+  Future<double?> _showWeightInputDialog() async {
+    double? weight;
+    return await showDialog<double>(
+      context: context,
+      builder: (BuildContext context) {
+        double inputWeight = 0.0;
+        return AlertDialog(
+          title: Text("Add Weight Entry"),
+          content: TextField(
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(hintText: "Enter your weight (kg)"),
+            onChanged: (value) {
+              inputWeight = double.tryParse(value) ?? 0.0;
+            },
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text("Add"),
+              onPressed: () {
+                Navigator.of(context).pop(inputWeight);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -60,7 +133,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           SizedBox(height: 20),
 
-          // Adjusted Line Chart for Weight Progress
+          // Updated Line Chart for Weight Progress
           SizedBox(
             height: 450,
             child: LineChart(
@@ -109,13 +182,7 @@ class _HomeTabState extends State<HomeTab> {
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: [
-                      FlSpot(1, 90),
-                      FlSpot(2, 89),
-                      FlSpot(3, 87),
-                      FlSpot(4, 86),
-                      FlSpot(5, 85),
-                    ],
+                    spots: weightSpots, // Use the FlSpot data from weight history
                     isCurved: true,
                     barWidth: 2,
                     color: Color(0xFF5DD75B),
@@ -132,9 +199,7 @@ class _HomeTabState extends State<HomeTab> {
               _buildWeightColumn("Change", "$weightChange Kg"),
               IconButton(
                 icon: Icon(Icons.add_circle, color: Color(0xFF5DD75B), size: 100),
-                onPressed: () {
-                  // Add functionality here
-                },
+                onPressed: _addWeightEntry, // Call the function to add weight entry
               ),
               _buildWeightColumn("Remaining", "$remainingWeight Kg"),
             ],
