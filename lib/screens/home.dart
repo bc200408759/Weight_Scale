@@ -56,7 +56,7 @@ class _HomeTabState extends State<HomeTab> {
     for (var i = 0; i < history.length; i++) {
       final entry = history[i];
       weightSpots.add(FlSpot(i.toDouble() + 1, entry['weight'])); // FlSpot(x, y)
-      dates.add(DateTime.parse(entry['date']).toLocal().toString().split(' ')[0]); // Get date in YYYY-MM-DD format
+      dates.add(DateTime.parse(entry['date']).toLocal().day.toString());
     }
 
     setState(() {}); // Trigger a rebuild to update the chart
@@ -196,12 +196,12 @@ class _HomeTabState extends State<HomeTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildWeightColumn("Change", "$weightChange Kg"),
+              _buildWeightColumn("Change", '${weightChange.toStringAsFixed(1)} Kg'),
               IconButton(
                 icon: Icon(Icons.add_circle, color: Color(0xFF5DD75B), size: 100),
                 onPressed: _addWeightEntry, // Call the function to add weight entry
               ),
-              _buildWeightColumn("Remaining", "$remainingWeight Kg"),
+              _buildWeightColumn("Remaining",'${remainingWeight.toStringAsFixed(1)} Kg'),
             ],
           ),
         ],
@@ -218,9 +218,9 @@ class _HomeTabState extends State<HomeTab> {
           width: 30,
         ),
         SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 16, color: Colors.black)),
+        Text(label, style: TextStyle(fontSize: 16, color: Colors.black , fontWeight: FontWeight.bold)),
         SizedBox(height: 4),
-        Text(value, style: TextStyle(fontSize: 16, color: Colors.grey)),
+        Text(value, style: TextStyle(fontSize: 16, color: Colors.grey , fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -228,9 +228,9 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildWeightColumn(String label, String value) {
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 16, color: Colors.black)),
+        Text(label, style: TextStyle(fontSize: 16, color: Colors.black , fontWeight: FontWeight.bold )),
         SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 16, color: Colors.grey)),
+        Text(value, style: TextStyle(fontSize: 16, color: Colors.grey , fontWeight: FontWeight.bold)),
       ],
     );
   }

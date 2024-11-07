@@ -69,13 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // User data variables
-  String? _name;
   double? _currentWeight;
   double? _height;
   int? _age;
   String? _gender;
-  double? _targetWeight;
-  double? _startWeight;
 
   @override
   void initState() {
@@ -86,13 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserData() async {
     final userPrefs = UserPreferences();
     setState(() {
-      _name = userPrefs.name;
       _currentWeight = userPrefs.currentWeight;
       _height = userPrefs.height;
       _age = userPrefs.age;
       _gender = userPrefs.gender;
-      _targetWeight = userPrefs.targetWeight;
-      _startWeight = userPrefs.startWeight;
     });
   }
 

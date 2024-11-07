@@ -45,8 +45,41 @@ class WeightHistory {
     history.add(newEntry);
     await _prefs?.setString(_historyKey, json.encode(history));
   }
+
+ Future<void> updateWeightEntry(String date, double newWeight) async {
+  print("updateWeightEntry : get called");
+  print("new weight is : $newWeight");
   
- // Method to print all weight history entries
+  final history = getHistory();
+  print("Current history: $history");  // Check the current history data
+
+  for (var entry in history) {
+    print("list date : ${entry['date']} :  Our date : ${date}");
+
+
+
+    if (entry['date'] == date) {
+      print("date matched");
+      double? lastWeight = history.isNotEmpty ? history.last['weight'] as double : null;
+      print("Last weight: $lastWeight");  // Check the last weight value
+      
+      entry['weight'] = newWeight;
+      
+      // Recalculate the change for this entry
+      double change = lastWeight != null ? newWeight - lastWeight : 0;
+      print("Change calculated: $change");
+      entry['change'] = change;
+      break;
+    }
+  }
+
+  // Save the updated history back to SharedPreferences
+  await _prefs?.setString(_historyKey, json.encode(history));
+  print("Updated history saved to SharedPreferences");
+}
+
+
+  // Method to print all weight history entries
   void printWeightHistory() {
     final history = getHistory();
     for (var entry in history) {
